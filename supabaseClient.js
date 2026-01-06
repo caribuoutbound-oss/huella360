@@ -19,22 +19,22 @@ async function supabaseFetch(table, options = {}) {
   const response = await fetch(url, {
     method: 'GET',
     headers: {
-      'apikey': supabaseAnonKey,
-      'Authorization': `Bearer ${supabaseAnonKey}`
+      apikey: supabaseAnonKey,
+      Authorization: `Bearer ${supabaseAnonKey}`
     }
   });
   
   return await response.json();
 }
 
-async function supabaseLogin(usuario, contrasena) {
+export async function supabaseLogin(usuario, contrasena) {
   const data = await supabaseFetch('usuarios', {
     eq: { usuario, contrasena, estado: 'Activo' }
   });
   return Array.isArray(data) && data.length > 0 ? data[0] : null;
 }
 
-async function searchPedidos(query) {
+export async function searchPedidos(query) {
   const data = await supabaseFetch('pedidos', {
     or: `numerodocumento.eq.${query},order_id.eq.${query}`,
     order: 'fechatomapedido.desc',
