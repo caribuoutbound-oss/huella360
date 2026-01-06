@@ -1,19 +1,18 @@
-// script.jsx
 import { supabaseLogin, searchPedidos } from './supabaseClient.js';
 
-// Estado global (simulado)
+/* Estado */
 let currentUser = null;
 let searchResults = [];
 let isLoading = false;
 
-// Render functions
-function render(element) {
-  document.getElementById('root').innerHTML = element;
+/* Render */
+function render(html) {
+  document.getElementById('root').innerHTML = html;
 }
 
-function formatDate(isoString) {
-  const date = new Date(isoString);
-  return date.toLocaleDateString('es-ES', {
+/* Utils */
+function formatDate(date) {
+  return new Date(date).toLocaleDateString('es-ES', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -22,93 +21,96 @@ function formatDate(isoString) {
   });
 }
 
-// Componentes
+/* Login */
 function LoginPage() {
   return `
-    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
-      <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">Acceso Interno</h2>
+    <div class="w-full max-w-md mx-auto bg-white p-8 rounded-2xl shadow-xl animate-fadeIn">
+      <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">
+        Acceso Interno
+      </h2>
+
       <form id="loginForm" class="space-y-4">
-        <input type="text" name="usuario" placeholder="Usuario" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
-        <input type="password" name="contrasena" placeholder="Contraseña" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
-        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition">Entrar</button>
+        <input name="usuario" required placeholder="Usuario"
+          class="w-full p-3 border rounded-xl" />
+
+        <input name="contrasena" type="password" required placeholder="Contraseña"
+          class="w-full p-3 border rounded-xl" />
+
+        <button class="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700">
+          Entrar
+        </button>
       </form>
     </div>
   `;
 }
 
+/* Home */
 function HomePage() {
-  const resultsHtml = searchResults.map(row => `
-    <tr class="hover:bg-gray-50">
-      <td class="px-4 py-3 text-sm font-medium">${row.pedido}</td>
-      <td class="px-4 py-3 text-sm">${row.nombrecliente}</td>
-      <td class="px-4 py-3 text-sm">
-        ${row.motivorechazo}<br>
-        <span class="text-xs text-gray-500">${row.submotivorechazo || ''}</span>
+  const rows = searchResults.map(r => `
+    <tr class="result-card hover:bg-gray-50">
+      <td class="px-4 py-3 font-semibold">#${r.order_id}</td>
+      <td class="px-4 py-3">${r.nombrecliente}</td>
+      <td class="px-4 py-3 text-red-600 font-medium">
+        ${r.motivorechazo}
+        <div class="text-xs text-gray-500">${r.submotivorechazo || ''}</div>
       </td>
-      <td class="px-4 py-3 text-sm">${formatDate(row.fechatomapedido)}</td>
+      <td class="px-4 py-3 text-gray-600">${formatDate(r.fechatomapedido)}</td>
     </tr>
   `).join('');
 
   return `
-    <div class="w-full max-w-6xl mx-auto p-4">
+    <div class="w-full max-w-6xl mx-auto bg-white p-6 rounded-2xl shadow-xl">
       <div class="flex justify-between items-center mb-6">
-        <h1 class="text-xl font-bold text-gray-800">Bienvenido, ${currentUser.nombre}</h1>
-        <button onclick="logout()" class="text-sm text-red-600 hover:underline">Salir</button>
-      </div>
-      
-      <div class="flex gap-2 mb-6">
-        <input id="searchInput" type="text" placeholder="Buscar por DNI o ORDER_ID" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg" />
-        <button onclick="doSearch()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Buscar</button>
+        <h1 class="text-xl font-bold">Bienvenido, ${currentUser.nombre}</h1>
+        <button onclick="logout()" class="text-red-600 text-sm">Salir</button>
       </div>
 
-      ${isLoading ? `
-        <div class="text-center py-12">
-          <div class="spinner mx-auto"></div>
-        </div>
-      ` : `
-        <div class="overflow-x-auto bg-white rounded-lg shadow">
-          <table class="min-w-full">
-            <thead class="bg-gray-100">
-              <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pedido</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Motivo</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-              ${resultsHtml || '<tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">No se encontraron resultados</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-      `}
+      <div class="flex gap-2 mb-6">
+        <input id="searchInput" placeholder="DNI u ORDER_ID"
+          class="flex-1 p-3 border rounded-xl" />
+        <button onclick="doSearch()"
+          class="bg-blue-600 text-white px-4 rounded-xl hover:bg-blue-700">
+          Buscar
+        </button>
+      </div>
+
+      ${
+        isLoading
+          ? `<div class="text-center py-12">
+               <div class="spinner mx-auto mb-3"></div>
+               <p class="text-sm text-gray-500">Buscando pedidos...</p>
+             </div>`
+          : `
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-100 text-xs uppercase">
+                <tr>
+                  <th class="px-4 py-3 text-left">Pedido</th>
+                  <th class="px-4 py-3 text-left">Cliente</th>
+                  <th class="px-4 py-3 text-left">Motivo</th>
+                  <th class="px-4 py-3 text-left">Fecha</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y">
+                ${rows || `<tr><td colspan="4" class="empty-state">Sin resultados</td></tr>`}
+              </tbody>
+            </table>
+          </div>`
+      }
     </div>
   `;
 }
 
-// Event handlers
-window.handleLogin = async (e) => {
-  e.preventDefault();
-  const form = e.target;
-  const usuario = form.usuario.value;
-  const contrasena = form.contrasena.value;
-  
-  const user = await supabaseLogin(usuario, contrasena);
-  if (user) {
-    currentUser = user;
-    render(HomePage());
-  } else {
-    alert('Usuario o contraseña incorrectos');
-  }
-};
-
+/* Eventos */
 window.doSearch = async () => {
-  const query = document.getElementById('searchInput').value.trim();
-  if (!query) return;
-  
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+
   isLoading = true;
   render(HomePage());
-  searchResults = await searchPedidos(query);
+
+  searchResults = await searchPedidos(q);
+
   isLoading = false;
   render(HomePage());
 };
@@ -118,14 +120,22 @@ window.logout = () => {
   render(LoginPage());
 };
 
-// Initialize
+/* Init */
 document.addEventListener('DOMContentLoaded', () => {
   render(LoginPage());
-  
-  // Bind events after render
-  document.addEventListener('submit', (e) => {
+
+  document.addEventListener('submit', async e => {
     if (e.target.id === 'loginForm') {
-      window.handleLogin(e);
+      e.preventDefault();
+      const { usuario, contrasena } = e.target;
+      const user = await supabaseLogin(usuario.value, contrasena.value);
+
+      if (user) {
+        currentUser = user;
+        render(HomePage());
+      } else {
+        alert('Credenciales incorrectas');
+      }
     }
   });
 });
