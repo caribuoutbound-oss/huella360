@@ -4,13 +4,50 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Buscador de Pedidos</title>
+
+  <!-- Tailwind (solo desarrollo) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script type="module" src="script.js"></script>
+
+  <!-- Estilos personalizados -->
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Lógica -->
+  <script type="module" src="script.js"></script>
 </head>
-<body class="bg-gray-100">
-  <div id="root" class="min-h-screen flex items-center justify-center">
-    Cargando...
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <div class="w-full max-w-4xl bg-white rounded-2xl shadow-xl p-6">
+
+    <!-- HEADER -->
+    <header class="mb-6">
+      <h1 class="text-2xl font-bold text-gray-800">
+        🔍 Buscador de Pedidos
+      </h1>
+      <p class="text-sm text-gray-500">
+        Consulta por número de documento u orden
+      </p>
+    </header>
+
+    <!-- INPUT -->
+    <div class="mb-6">
+      <input
+        id="search"
+        type="text"
+        placeholder="Ej: 240001079"
+        class="w-full p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    <!-- RESULTADOS -->
+    <div id="results" class="space-y-3">
+      <div class="empty-state">
+        Ingresa un número para buscar pedidos
+      </div>
+    </div>
+
   </div>
+
 </body>
 </html>
