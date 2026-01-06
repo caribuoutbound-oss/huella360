@@ -34,33 +34,61 @@ function formatDate(date) {
 ========================= */
 function LoginPage() {
   return `
-    <div class="w-full max-w-md mx-auto bg-white p-8 rounded-2xl shadow-xl animate-fadeIn">
-      <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">
-        Acceso Interno
-      </h2>
+    <div class="w-full max-w-md mx-auto login-container">
+      <div class="glass-effect card-shadow p-10 rounded-2xl">
+        
+        <div class="login-header">
+          <div class="login-icon">
+            🔐
+          </div>
+          <h2 class="login-title">
+            Acceso al Sistema
+          </h2>
+          <p class="login-subtitle">
+            Ingresa tus credenciales para continuar
+          </p>
+        </div>
 
-      <form id="loginForm" class="space-y-4">
-        <input
-          name="usuario"
-          required
-          placeholder="Usuario"
-          class="w-full p-3 border rounded-xl"
-        />
+        <form id="loginForm" class="space-y-5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
+              Usuario
+            </label>
+            <input
+              name="usuario"
+              required
+              placeholder="Ingresa tu usuario"
+              class="w-full p-3.5 border input-modern rounded-xl text-sm bg-white"
+            />
+          </div>
 
-        <input
-          name="contrasena"
-          type="password"
-          required
-          placeholder="Contraseña"
-          class="w-full p-3 border rounded-xl"
-        />
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
+              Contraseña
+            </label>
+            <input
+              name="contrasena"
+              type="password"
+              required
+              placeholder="••••••••"
+              class="w-full p-3.5 border input-modern rounded-xl text-sm bg-white"
+            />
+          </div>
 
-        <button
-          class="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition"
-        >
-          Entrar
-        </button>
-      </form>
+          <button
+            type="submit"
+            class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3.5 rounded-xl font-semibold text-sm btn-primary mt-6"
+          >
+            Iniciar Sesión
+          </button>
+        </form>
+
+        <div class="mt-6 pt-6 border-t border-slate-200 text-center">
+          <p class="text-xs text-slate-500">
+            Sistema Interno de Gestión de Pedidos
+          </p>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -69,86 +97,144 @@ function LoginPage() {
    HOME PAGE
 ========================= */
 function HomePage() {
-  const rows = searchResults.map(r => `
-    <tr class="result-card hover:bg-gray-50">
-      <td class="px-4 py-3 font-semibold">#${r.order_id}</td>
-      <td class="px-4 py-3">${r.nombrecliente}</td>
-      <td class="px-4 py-3 text-red-600 font-medium">
-        ${r.motivorechazo}
-        <div class="text-xs text-gray-500">
-          ${r.submotivorechazo || ''}
+  const rows = searchResults.map((r, idx) => `
+    <tr style="animation-delay: ${idx * 0.05}s">
+      <td class="px-4 py-3.5">
+        <div class="flex items-center gap-2">
+          <span class="badge badge-info">
+            #${r.order_id}
+          </span>
         </div>
       </td>
-      <td class="px-4 py-3 text-gray-600">
+      <td class="px-4 py-3.5">
+        <div class="font-medium text-slate-700">
+          ${r.nombrecliente}
+        </div>
+      </td>
+      <td class="px-4 py-3.5">
+        <div class="badge badge-danger mb-1">
+          ${r.motivorechazo}
+        </div>
+        ${r.submotivorechazo ? `
+          <div class="text-xs text-slate-500 mt-1">
+            ${r.submotivorechazo}
+          </div>
+        ` : ''}
+      </td>
+      <td class="px-4 py-3.5 text-slate-600 text-xs">
         ${formatDate(r.fechatomapedido)}
       </td>
     </tr>
   `).join('');
 
   return `
-    <div class="w-full max-w-6xl mx-auto bg-white p-6 rounded-2xl shadow-xl">
-      
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-xl font-bold">
-          Bienvenido, ${currentUser.nombre}
-        </h1>
-        <button
-          onclick="logout()"
-          class="text-red-600 text-sm hover:underline"
-        >
-          Salir
-        </button>
-      </div>
+    <div class="w-full max-w-7xl mx-auto animate-fadeIn">
+      <div class="glass-effect card-shadow p-8 rounded-2xl">
+        
+        <!-- Header -->
+        <div class="header-section flex justify-between items-center flex-wrap gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-800 mb-1">
+              Panel de Pedidos
+            </h1>
+            <p class="text-sm text-slate-500">
+              Búsqueda y gestión de pedidos rechazados
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="user-badge">
+              ${currentUser.nombre}
+            </span>
+            <button
+              onclick="logout()"
+              class="text-slate-500 hover:text-red-600 text-sm font-medium transition-smooth px-3 py-2 rounded-lg hover:bg-red-50"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
 
-      <div class="flex gap-2 mb-6">
-        <input
-          id="searchInput"
-          placeholder="DNI u ORDER_ID"
-          class="flex-1 p-3 border rounded-xl"
-        />
-        <button
-          onclick="doSearch()"
-          class="bg-blue-600 text-white px-4 rounded-xl hover:bg-blue-700 transition"
-        >
-          Buscar
-        </button>
-      </div>
+        <!-- Search Bar -->
+        <div class="search-container">
+          <div class="relative flex-1">
+            <svg class="search-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              id="searchInput"
+              placeholder="Buscar por DNI o número de orden..."
+              class="w-full p-3.5 border input-modern search-input rounded-xl text-sm bg-white"
+            />
+          </div>
+          <button
+            onclick="doSearch()"
+            class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 rounded-xl font-semibold text-sm btn-primary whitespace-nowrap"
+          >
+            🔍 Buscar
+          </button>
+        </div>
 
-      ${
-        isLoading
-          ? `
-            <div class="text-center py-12">
-              <div class="spinner mx-auto mb-3"></div>
-              <p class="text-sm text-gray-500">
-                Buscando pedidos...
-              </p>
-            </div>
-          `
-          : `
-            <div class="overflow-x-auto">
-              <table class="w-full">
-                <thead class="bg-gray-100 text-xs uppercase">
-                  <tr>
-                    <th class="px-4 py-3 text-left">Pedido</th>
-                    <th class="px-4 py-3 text-left">Cliente</th>
-                    <th class="px-4 py-3 text-left">Motivo</th>
-                    <th class="px-4 py-3 text-left">Fecha</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y">
-                  ${
-                    rows ||
-                    `<tr>
-                      <td colspan="4" class="empty-state text-center py-8 text-gray-500">
-                        Sin resultados
-                      </td>
-                    </tr>`
-                  }
-                </tbody>
-              </table>
-            </div>
-          `
-      }
+        <!-- Results -->
+        ${
+          isLoading
+            ? `
+              <div class="text-center py-16">
+                <div class="spinner mx-auto mb-4"></div>
+                <p class="text-sm text-slate-500 font-medium">
+                  Buscando pedidos...
+                </p>
+                <p class="text-xs text-slate-400 mt-1">
+                  Esto puede tomar unos segundos
+                </p>
+              </div>
+            `
+            : `
+              <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="table-modern">
+                  <thead>
+                    <tr>
+                      <th>Nº Pedido</th>
+                      <th>Cliente</th>
+                      <th>Motivo de Rechazo</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${
+                      rows ||
+                      `<tr>
+                        <td colspan="4">
+                          <div class="empty-state">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p class="font-medium text-slate-600 mb-1">
+                              No se encontraron resultados
+                            </p>
+                            <p class="text-xs text-slate-400">
+                              Intenta con otro DNI o número de orden
+                            </p>
+                          </div>
+                        </td>
+                      </tr>`
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              ${searchResults.length > 0 ? `
+                <div class="mt-4 flex items-center justify-between text-xs text-slate-500 px-2">
+                  <span>
+                    Mostrando <span class="font-semibold text-slate-700">${searchResults.length}</span> resultado${searchResults.length !== 1 ? 's' : ''}
+                  </span>
+                  <span>
+                    Última búsqueda: ${new Date().toLocaleTimeString('es-ES')}
+                  </span>
+                </div>
+              ` : ''}
+            `
+        }
+      </div>
     </div>
   `;
 }
@@ -158,21 +244,31 @@ function HomePage() {
 ========================= */
 window.doSearch = async () => {
   const q = document.getElementById('searchInput').value.trim();
-  if (!q) return;
+  if (!q) {
+    alert('Por favor ingresa un DNI o número de orden');
+    return;
+  }
 
   isLoading = true;
   render(HomePage());
 
-  searchResults = await searchPedidos(q);
+  try {
+    searchResults = await searchPedidos(q);
+  } catch (error) {
+    console.error('Error en búsqueda:', error);
+    searchResults = [];
+  }
 
   isLoading = false;
   render(HomePage());
 };
 
 window.logout = () => {
-  currentUser = null;
-  resetState();
-  render(LoginPage());
+  if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+    currentUser = null;
+    resetState();
+    render(LoginPage());
+  }
 };
 
 /* =========================
@@ -185,19 +281,41 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.id === 'loginForm') {
       e.preventDefault();
 
-      const { usuario, contrasena } = e.target;
-      const user = await supabaseLogin(
-        usuario.value,
-        contrasena.value
-      );
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      
+      submitBtn.innerHTML = '<div class="spinner mx-auto" style="width: 20px; height: 20px; border-width: 2px;"></div>';
+      submitBtn.disabled = true;
 
-      if (user) {
-        currentUser = user;
-        resetState();
-        render(HomePage());
-      } else {
-        alert('Credenciales incorrectas');
+      try {
+        const { usuario, contrasena } = e.target;
+        const user = await supabaseLogin(
+          usuario.value,
+          contrasena.value
+        );
+
+        if (user) {
+          currentUser = user;
+          resetState();
+          render(HomePage());
+        } else {
+          alert('❌ Credenciales incorrectas. Por favor, verifica tu usuario y contraseña.');
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+        }
+      } catch (error) {
+        console.error('Error en login:', error);
+        alert('❌ Error al iniciar sesión. Intenta nuevamente.');
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
       }
+    }
+  });
+
+  // Enter key en search
+  document.addEventListener('keypress', e => {
+    if (e.target.id === 'searchInput' && e.key === 'Enter') {
+      window.doSearch();
     }
   });
 });
