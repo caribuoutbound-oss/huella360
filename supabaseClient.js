@@ -38,7 +38,7 @@ export async function searchPedidos(query) {
   const data = await supabaseFetch('pedidos', {
     or: `(numerodocumento.eq.${query},order_id.eq.${query})`,
     order: 'fechatomapedido.desc',
-    limit: 5
+    limit: 20
   });
   return Array.isArray(data) ? data : [];
 }
