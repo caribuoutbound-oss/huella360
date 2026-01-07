@@ -29,6 +29,34 @@ function formatDate(date) {
   });
 }
 
+function maskName(name) {
+  if (!name) return '—';
+  const parts = name.trim().split(/\s+/); // Divide por uno o más espacios
+  if (parts.length === 1) {
+    // Ej: "Ana" → "A••"
+    return parts[0].charAt(0).toUpperCase() + '•'.repeat(Math.max(0, parts[0].length - 1));
+  }
+  // Ej: "Juan Carlos Pérez" → "Juan C•••••••••"
+  const firstName = parts[0];
+  const lastName = parts.slice(1).join(' ');
+  const maskedLastName = lastName.charAt(0).toUpperCase() + '•'.repeat(Math.max(0, lastName.length - 1));
+  return `${firstName} ${maskedLastName}`;
+}
+
+function maskPhone(phone) {
+  if (!phone && phone !== 0) return '—';
+  const cleaned = phone.toString().replace(/\D/g, ''); // Solo dígitos
+  if (cleaned.length === 0) return '—';
+  if (cleaned.length <= 4) {
+    return '•'.repeat(cleaned.length);
+  }
+  const first = cleaned.substring(0, 3);
+  const last = cleaned.length >= 5 ? cleaned.slice(-2) : '';
+  const middleLength = cleaned.length - first.length - last.length;
+  const middle = '•'.repeat(Math.max(0, middleLength));
+  return first + middle + last;
+}
+
 /* =========================
    LOGIN PAGE
 ========================= */
