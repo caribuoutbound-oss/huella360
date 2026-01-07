@@ -108,11 +108,11 @@ function HomePage() {
       </td>
       <td class="px-4 py-3.5">
         <div class="font-medium text-slate-700">
-          ${r.nombrecliente}
+          ${maskName(r.nombrecliente)}
         </div>
       </td>
       <td class="px-4 py-3.5 text-slate-600 text-sm">
-        ${r.numerotelefonico || '—'}
+        ${maskPhone(r.numerotelefonico)}
       </td>
       <td class="px-4 py-3.5">
         <div class="badge badge-danger mb-1">
