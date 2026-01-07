@@ -3,50 +3,9 @@ import { supabaseLogin, searchPedidos } from './supabaseClient.js';
 /* =========================
    ESTADO GLOBAL
 ========================= */
-let currentUser = { nombre: 'Visitante' }; // Simulación de usuario para evitar errores
+let currentUser = { nombre: 'Visitante' };
 let searchResults = [];
 let isLoading = false;
-
-/* =========================
-   MODO OSCURO
-========================= */
-function initTheme() {
-  const savedTheme = localStorage.getItem('theme');
-  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
-  document.documentElement.setAttribute('data-theme', theme);
-}
-
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  const newTheme = current === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', newTheme);
-  localStorage.setItem('theme', newTheme);
-}
-
-function createThemeToggle() {
-  if (document.getElementById('theme-toggle')) return;
-
-  const toggle = document.createElement('div');
-  toggle.id = 'theme-toggle';
-  toggle.className = 'theme-toggle';
-  toggle.innerHTML = `
-    <button class="theme-toggle-btn" aria-label="Alternar modo claro/oscuro">
-      <svg class="theme-icon sun" viewBox="0 0 24 24" aria-hidden="true">
-        <path class="sun-icon" d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06L16.5 6.44l-1.334-1.334a.75.75 0 00-1.06 1.06l1.333 1.334-1.333 1.334a.75.75 0 101.06 1.06L16.5 9.56l1.334 1.334a.75.75 0 001.06-1.06L17.56 8.5l1.334-1.334z" />
-      </svg>
-      <svg class="theme-icon moon" viewBox="0 0 24 24" aria-hidden="true">
-        <path class="moon-icon" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" />
-      </svg>
-    </button>
-  `;
-
-  toggle.querySelector('button').addEventListener('click', toggleTheme);
-  document.body.appendChild(toggle);
-}
-
-// Inicializar tema inmediatamente
-initTheme();
 
 /* =========================
    HELPERS
@@ -97,7 +56,45 @@ function maskPhone(phone) {
 }
 
 /* =========================
-   HOME PAGE (sin login)
+   THEME FUNCTIONS
+========================= */
+window.toggleTheme = () => {
+  const html = document.documentElement;
+  const currentTheme = html.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+};
+
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme');
+  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+}
+
+function createThemeToggle() {
+  if (document.getElementById('theme-toggle')) return;
+
+  const toggleHTML = `
+    <div id="theme-toggle" class="theme-toggle">
+      <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Cambiar tema">
+        <svg class="theme-icon sun sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="5" fill="currentColor"/>
+          <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m15.364-6.636l-4.243 4.243m-6 0L1.878 5.636m14.485 12.728l-4.243-4.243m-6 0l-4.243 4.243" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <svg class="theme-icon moon moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor"/>
+        </svg>
+      </button>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('afterbegin', toggleHTML);
+}
+
+/* =========================
+   HOME PAGE
 ========================= */
 function HomePage() {
   const rows = searchResults.map((r, idx) => `
@@ -108,36 +105,38 @@ function HomePage() {
         </div>
       </td>
       <td class="px-4 py-3.5">
-        <div class="font-medium text-slate-700">${maskName(r.nombrecliente)}</div>
+        <div class="font-medium" style="color: var(--text-secondary)">${maskName(r.nombrecliente)}</div>
       </td>
-      <td class="px-4 py-3.5 text-slate-600 text-sm">${maskPhone(r.numerotelefonico)}</td>
+      <td class="px-4 py-3.5 text-sm" style="color: var(--text-secondary)">${maskPhone(r.numerotelefonico)}</td>
       <td class="px-4 py-3.5">
         <div class="badge badge-danger mb-1">${r.motivorechazo}</div>
-        ${r.submotivorechazo ? `<div class="text-xs text-slate-500 mt-1">${r.submotivorechazo}</div>` : ''}
+        ${r.submotivorechazo ? `<div class="text-xs mt-1" style="color: var(--text-muted)">${r.submotivorechazo}</div>` : ''}
       </td>
-      <td class="px-4 py-3.5 text-slate-600 text-xs">${formatDate(r.fechatomapedido)}</td>
+      <td class="px-4 py-3.5 text-xs" style="color: var(--text-secondary)">${formatDate(r.fechatomapedido)}</td>
     </tr>
   `).join('');
 
   return `
     <div class="w-full max-w-7xl mx-auto animate-fadeIn">
       <div class="glass-effect card-shadow p-8 rounded-2xl">
+        <!-- Header -->
         <div class="header-section flex justify-between items-center flex-wrap gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-slate-800 mb-1">Panel de Pedidos</h1>
-            <p class="text-sm text-slate-500">Búsqueda y gestión de pedidos rechazados</p>
+            <h1 class="text-2xl font-bold mb-1" style="color: var(--text-primary)">Panel de Pedidos</h1>
+            <p class="text-sm" style="color: var(--text-muted)">Búsqueda y gestión de pedidos rechazados</p>
           </div>
         </div>
 
+        <!-- Search Bar -->
         <div class="search-container mt-6 flex gap-3 flex-wrap">
           <div class="relative flex-1 min-w-[250px]">
-            <svg class="search-icon absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="search-icon absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
               id="searchInput"
               placeholder="Buscar por DNI o número de orden..."
-              class="w-full pl-10 p-3.5 border input-modern search-input rounded-xl text-sm bg-white"
+              class="w-full pl-10 p-3.5 border input-modern search-input rounded-xl text-sm"
             />
           </div>
           <button
@@ -148,25 +147,26 @@ function HomePage() {
           </button>
         </div>
 
+        <!-- Results -->
         ${
           isLoading
             ? `
               <div class="text-center py-16">
                 <div class="spinner mx-auto mb-4"></div>
-                <p class="text-sm text-slate-500 font-medium">Buscando pedidos...</p>
-                <p class="text-xs text-slate-400 mt-1">Esto puede tomar unos segundos</p>
+                <p class="text-sm font-medium" style="color: var(--text-muted)">Buscando pedidos...</p>
+                <p class="text-xs mt-1" style="color: var(--text-muted); opacity: 0.7">Esto puede tomar unos segundos</p>
               </div>
             `
             : `
-              <div class="overflow-x-auto rounded-xl border border-slate-200 mt-6">
+              <div class="overflow-x-auto rounded-xl mt-6" style="border: 1px solid var(--border-color)">
                 <table class="table-modern w-full">
                   <thead>
                     <tr>
-                      <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Nº Pedido</th>
-                      <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Cliente</th>
-                      <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Teléfono</th>
-                      <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Motivo de Rechazo</th>
-                      <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Fecha</th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style="color: var(--text-secondary)">Nº Pedido</th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style="color: var(--text-secondary)">Cliente</th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style="color: var(--text-secondary)">Teléfono</th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style="color: var(--text-secondary)">Motivo de Rechazo</th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style="color: var(--text-secondary)">Fecha</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -175,11 +175,11 @@ function HomePage() {
                       `<tr>
                         <td colspan="5">
                           <div class="empty-state py-12 text-center">
-                            <svg class="mx-auto w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="mx-auto w-10 h-10" style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <p class="font-medium text-slate-600 mb-1 mt-3">No se encontraron resultados</p>
-                            <p class="text-xs text-slate-400">Intenta con otro DNI o número de orden</p>
+                            <p class="font-medium mb-1 mt-3" style="color: var(--text-secondary)">No se encontraron resultados</p>
+                            <p class="text-xs" style="color: var(--text-muted)">Intenta con otro DNI o número de orden</p>
                           </div>
                         </td>
                       </tr>`
@@ -189,9 +189,9 @@ function HomePage() {
               </div>
 
               ${searchResults.length > 0 ? `
-                <div class="mt-4 flex items-center justify-between text-xs text-slate-500 px-2">
+                <div class="mt-4 flex items-center justify-between text-xs px-2" style="color: var(--text-muted)">
                   <span>
-                    Mostrando <span class="font-semibold text-slate-700">${searchResults.length}</span> resultado${searchResults.length !== 1 ? 's' : ''}
+                    Mostrando <span class="font-semibold" style="color: var(--text-secondary)">${searchResults.length}</span> resultado${searchResults.length !== 1 ? 's' : ''}
                   </span>
                   <span>Última búsqueda: ${new Date().toLocaleTimeString('es-ES')}</span>
                 </div>
@@ -231,12 +231,20 @@ window.doSearch = async () => {
    INIT
 ========================= */
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  createThemeToggle(); // 👈 Inserta el botón fijo en el body (fuera del layout)
   render(HomePage());
-  createThemeToggle(); // 👈 Inserta el botón de modo oscuro
 
   document.addEventListener('keypress', e => {
     if (e.target.id === 'searchInput' && e.key === 'Enter') {
       window.doSearch();
+    }
+  });
+
+  // Respetar cambios del sistema si no hay preferencia guardada
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!localStorage.getItem('theme')) {
+      document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
     }
   });
 });
