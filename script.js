@@ -3,10 +3,50 @@ import { supabaseLogin, searchPedidos } from './supabaseClient.js';
 /* =========================
    ESTADO GLOBAL
 ========================= */
-// Simulamos un usuario genérico para evitar errores en HomePage()
-let currentUser = { nombre: 'Visitante' };
+let currentUser = { nombre: 'Visitante' }; // Simulación de usuario para evitar errores
 let searchResults = [];
 let isLoading = false;
+
+/* =========================
+   MODO OSCURO
+========================= */
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme');
+  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const newTheme = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+}
+
+function createThemeToggle() {
+  if (document.getElementById('theme-toggle')) return;
+
+  const toggle = document.createElement('div');
+  toggle.id = 'theme-toggle';
+  toggle.className = 'theme-toggle';
+  toggle.innerHTML = `
+    <button class="theme-toggle-btn" aria-label="Alternar modo claro/oscuro">
+      <svg class="theme-icon sun" viewBox="0 0 24 24" aria-hidden="true">
+        <path class="sun-icon" d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06L16.5 6.44l-1.334-1.334a.75.75 0 00-1.06 1.06l1.333 1.334-1.333 1.334a.75.75 0 101.06 1.06L16.5 9.56l1.334 1.334a.75.75 0 001.06-1.06L17.56 8.5l1.334-1.334z" />
+      </svg>
+      <svg class="theme-icon moon" viewBox="0 0 24 24" aria-hidden="true">
+        <path class="moon-icon" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" />
+      </svg>
+    </button>
+  `;
+
+  toggle.querySelector('button').addEventListener('click', toggleTheme);
+  document.body.appendChild(toggle);
+}
+
+// Inicializar tema inmediatamente
+initTheme();
 
 /* =========================
    HELPERS
@@ -57,42 +97,7 @@ function maskPhone(phone) {
 }
 
 /* =========================
-   LOGIN PAGE (COMENTADA - NO SE USA ACTUALMENTE)
-========================= */
-/*
-function LoginPage() {
-  return `
-    <div class="w-full max-w-md mx-auto login-container">
-      <div class="glass-effect card-shadow p-10 rounded-2xl">
-        <div class="login-header">
-          <div class="login-icon">🔐</div>
-          <h2 class="login-title">Acceso al Sistema</h2>
-          <p class="login-subtitle">Ingresa tus credenciales para continuar</p>
-        </div>
-        <form id="loginForm" class="space-y-5">
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Usuario</label>
-            <input name="usuario" required placeholder="Ingresa tu usuario" class="w-full p-3.5 border input-modern rounded-xl text-sm bg-white" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Contraseña</label>
-            <input name="contrasena" type="password" required placeholder="••••••••" class="w-full p-3.5 border input-modern rounded-xl text-sm bg-white" />
-          </div>
-          <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3.5 rounded-xl font-semibold text-sm btn-primary mt-6">
-            Iniciar Sesión
-          </button>
-        </form>
-        <div class="mt-6 pt-6 border-t border-slate-200 text-center">
-          <p class="text-xs text-slate-500">Sistema Interno de Gestión de Pedidos</p>
-        </div>
-      </div>
-    </div>
-  `;
-}
-*/
-
-/* =========================
-   HOME PAGE
+   HOME PAGE (sin login)
 ========================= */
 function HomePage() {
   const rows = searchResults.map((r, idx) => `
@@ -117,16 +122,13 @@ function HomePage() {
   return `
     <div class="w-full max-w-7xl mx-auto animate-fadeIn">
       <div class="glass-effect card-shadow p-8 rounded-2xl">
-        <!-- Header -->
         <div class="header-section flex justify-between items-center flex-wrap gap-4">
           <div>
             <h1 class="text-2xl font-bold text-slate-800 mb-1">Panel de Pedidos</h1>
             <p class="text-sm text-slate-500">Búsqueda y gestión de pedidos rechazados</p>
           </div>
-          <!-- Botón de cierre de sesión eliminado (no hay login) -->
         </div>
 
-        <!-- Search Bar -->
         <div class="search-container mt-6 flex gap-3 flex-wrap">
           <div class="relative flex-1 min-w-[250px]">
             <svg class="search-icon absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,7 +148,6 @@ function HomePage() {
           </button>
         </div>
 
-        <!-- Results -->
         ${
           isLoading
             ? `
@@ -226,38 +227,16 @@ window.doSearch = async () => {
   render(HomePage());
 };
 
-/*
-// Función de logout comentada (no usada)
-window.logout = () => {
-  if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-    currentUser = null;
-    resetState();
-    render(LoginPage());
-  }
-};
-*/
-
 /* =========================
-   INIT - ARRANQUE DIRECTO EN HOME
+   INIT
 ========================= */
 document.addEventListener('DOMContentLoaded', () => {
-  // Renderizamos directamente la página de búsqueda
   render(HomePage());
+  createThemeToggle(); // 👈 Inserta el botón de modo oscuro
 
-  // Evento de tecla Enter en el buscador
   document.addEventListener('keypress', e => {
     if (e.target.id === 'searchInput' && e.key === 'Enter') {
       window.doSearch();
     }
   });
-
-  /*
-  // Lógica de login comentada
-  document.addEventListener('submit', async e => {
-    if (e.target.id === 'loginForm') {
-      e.preventDefault();
-      // ... lógica de login ...
-    }
-  });
-  */
 });
