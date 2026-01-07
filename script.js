@@ -6,6 +6,7 @@ import { supabaseLogin, searchPedidos } from './supabaseClient.js';
 let currentUser = { nombre: 'Visitante' };
 let searchResults = [];
 let isLoading = false;
+let lastQuery = ''; // Para evitar búsquedas repetidas
 
 /* =========================
    HELPERS
@@ -13,6 +14,7 @@ let isLoading = false;
 function resetState() {
   searchResults = [];
   isLoading = false;
+  lastQuery = '';
 }
 
 function render(html) {
@@ -135,7 +137,7 @@ function HomePage() {
             </svg>
             <input
               id="searchInput"
-              placeholder="Buscar por DNI o número de orden..."
+              placeholder="Ingresa DNI (sin puntos) o Nº de pedido"
               class="w-full pl-10 p-3.5 border input-modern search-input rounded-xl text-sm"
             />
           </div>
@@ -179,7 +181,7 @@ function HomePage() {
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <p class="font-medium mb-1 mt-3" style="color: var(--text-secondary)">No se encontraron resultados</p>
-                            <p class="text-xs" style="color: var(--text-muted)">Intenta con otro DNI o número de orden</p>
+                            <p class="text-xs" style="color: var(--text-muted)">Intenta con otro DNI o número de pedido</p>
                           </div>
                         </td>
                       </tr>`
@@ -207,12 +209,32 @@ function HomePage() {
    EVENTOS
 ========================= */
 window.doSearch = async () => {
-  const q = document.getElementById('searchInput').value.trim();
+  const input = document.getElementById('searchInput');
+  const q = input.value.trim();
+
+  // 🔒 Validación de entrada
   if (!q) {
-    alert('Por favor ingresa un DNI o número de orden');
+    alert('🔍 Por favor ingresa un DNI o número de pedido');
+    input.focus();
     return;
   }
 
+  if (!/^\d+$/.test(q)) {
+    alert('🔍 Usa solo números: DNI (sin puntos) o número de pedido');
+    input.select(); // Selecciona el texto incorrecto para facilitar corrección
+    return;
+  }
+
+  if (q.length < 3 || q.length > 12) {
+    alert('🔍 El DNI o número de pedido debe tener entre 3 y 12 dígitos');
+    input.select();
+    return;
+  }
+
+  // Evitar búsqueda repetida
+  if (q === lastQuery) return;
+
+  lastQuery = q;
   isLoading = true;
   render(HomePage());
 
@@ -221,6 +243,8 @@ window.doSearch = async () => {
   } catch (error) {
     console.error('Error en búsqueda:', error);
     searchResults = [];
+    // 🎯 Mensaje de error amigable
+    alert('⚠️ No se pudieron cargar los pedidos. Verifica tu conexión e inténtalo nuevamente.');
   }
 
   isLoading = false;
@@ -232,8 +256,14 @@ window.doSearch = async () => {
 ========================= */
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  createThemeToggle(); // 👈 Inserta el botón fijo en el body (fuera del layout)
+  createThemeToggle();
   render(HomePage());
+
+  // 🔍 Auto-focus en el campo de búsqueda
+  setTimeout(() => {
+    const input = document.getElementById('searchInput');
+    if (input) input.focus();
+  }, 100);
 
   document.addEventListener('keypress', e => {
     if (e.target.id === 'searchInput' && e.key === 'Enter') {
@@ -241,7 +271,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Respetar cambios del sistema si no hay preferencia guardada
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
     if (!localStorage.getItem('theme')) {
       document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
