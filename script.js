@@ -3,7 +3,8 @@ import { supabaseLogin, searchPedidos } from './supabaseClient.js';
 /* =========================
    ESTADO GLOBAL
 ========================= */
-let currentUser = null;
+// Simulamos un usuario genérico para evitar errores en HomePage()
+let currentUser = { nombre: 'Visitante' };
 let searchResults = [];
 let isLoading = false;
 
@@ -31,12 +32,10 @@ function formatDate(date) {
 
 function maskName(name) {
   if (!name) return '—';
-  const parts = name.trim().split(/\s+/); // Divide por uno o más espacios
+  const parts = name.trim().split(/\s+/);
   if (parts.length === 1) {
-    // Ej: "Ana" → "A••"
     return parts[0].charAt(0).toUpperCase() + '•'.repeat(Math.max(0, parts[0].length - 1));
   }
-  // Ej: "Juan Carlos Pérez" → "Juan C•••••••••"
   const firstName = parts[0];
   const lastName = parts.slice(1).join(' ');
   const maskedLastName = lastName.charAt(0).toUpperCase() + '•'.repeat(Math.max(0, lastName.length - 1));
@@ -45,7 +44,7 @@ function maskName(name) {
 
 function maskPhone(phone) {
   if (!phone && phone !== 0) return '—';
-  const cleaned = phone.toString().replace(/\D/g, ''); // Solo dígitos
+  const cleaned = phone.toString().replace(/\D/g, '');
   if (cleaned.length === 0) return '—';
   if (cleaned.length <= 4) {
     return '•'.repeat(cleaned.length);
@@ -58,68 +57,39 @@ function maskPhone(phone) {
 }
 
 /* =========================
-   LOGIN PAGE
+   LOGIN PAGE (COMENTADA - NO SE USA ACTUALMENTE)
 ========================= */
+/*
 function LoginPage() {
   return `
     <div class="w-full max-w-md mx-auto login-container">
       <div class="glass-effect card-shadow p-10 rounded-2xl">
-        
         <div class="login-header">
-          <div class="login-icon">
-            🔐
-          </div>
-          <h2 class="login-title">
-            Acceso al Sistema
-          </h2>
-          <p class="login-subtitle">
-            Ingresa tus credenciales para continuar
-          </p>
+          <div class="login-icon">🔐</div>
+          <h2 class="login-title">Acceso al Sistema</h2>
+          <p class="login-subtitle">Ingresa tus credenciales para continuar</p>
         </div>
-
         <form id="loginForm" class="space-y-5">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
-              Usuario
-            </label>
-            <input
-              name="usuario"
-              required
-              placeholder="Ingresa tu usuario"
-              class="w-full p-3.5 border input-modern rounded-xl text-sm bg-white"
-            />
+            <label class="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Usuario</label>
+            <input name="usuario" required placeholder="Ingresa tu usuario" class="w-full p-3.5 border input-modern rounded-xl text-sm bg-white" />
           </div>
-
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
-              Contraseña
-            </label>
-            <input
-              name="contrasena"
-              type="password"
-              required
-              placeholder="••••••••"
-              class="w-full p-3.5 border input-modern rounded-xl text-sm bg-white"
-            />
+            <label class="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Contraseña</label>
+            <input name="contrasena" type="password" required placeholder="••••••••" class="w-full p-3.5 border input-modern rounded-xl text-sm bg-white" />
           </div>
-
-          <button
-            type="submit"
-            class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3.5 rounded-xl font-semibold text-sm btn-primary mt-6"
-          >
+          <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3.5 rounded-xl font-semibold text-sm btn-primary mt-6">
             Iniciar Sesión
           </button>
         </form>
-
         <div class="mt-6 pt-6 border-t border-slate-200 text-center">
-          <p class="text-xs text-slate-500">
-            Sistema Interno de Gestión de Pedidos
-          </p>
+          <p class="text-xs text-slate-500">Sistema Interno de Gestión de Pedidos</p>
         </div>
       </div>
     </div>
   `;
 }
+*/
 
 /* =========================
    HOME PAGE
@@ -129,60 +99,31 @@ function HomePage() {
     <tr style="animation-delay: ${idx * 0.05}s">
       <td class="px-4 py-3.5">
         <div class="flex items-center gap-2">
-          <span class="badge badge-info">
-            #${r.order_id}
-          </span>
+          <span class="badge badge-info">#${r.order_id}</span>
         </div>
       </td>
       <td class="px-4 py-3.5">
-        <div class="font-medium text-slate-700">
-          ${maskName(r.nombrecliente)}
-        </div>
+        <div class="font-medium text-slate-700">${maskName(r.nombrecliente)}</div>
       </td>
-      <td class="px-4 py-3.5 text-slate-600 text-sm">
-        ${maskPhone(r.numerotelefonico)}
-      </td>
+      <td class="px-4 py-3.5 text-slate-600 text-sm">${maskPhone(r.numerotelefonico)}</td>
       <td class="px-4 py-3.5">
-        <div class="badge badge-danger mb-1">
-          ${r.motivorechazo}
-        </div>
-        ${r.submotivorechazo ? `
-          <div class="text-xs text-slate-500 mt-1">
-            ${r.submotivorechazo}
-          </div>
-        ` : ''}
+        <div class="badge badge-danger mb-1">${r.motivorechazo}</div>
+        ${r.submotivorechazo ? `<div class="text-xs text-slate-500 mt-1">${r.submotivorechazo}</div>` : ''}
       </td>
-      <td class="px-4 py-3.5 text-slate-600 text-xs">
-        ${formatDate(r.fechatomapedido)}
-      </td>
+      <td class="px-4 py-3.5 text-slate-600 text-xs">${formatDate(r.fechatomapedido)}</td>
     </tr>
   `).join('');
 
   return `
     <div class="w-full max-w-7xl mx-auto animate-fadeIn">
       <div class="glass-effect card-shadow p-8 rounded-2xl">
-        
         <!-- Header -->
         <div class="header-section flex justify-between items-center flex-wrap gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-slate-800 mb-1">
-              Panel de Pedidos
-            </h1>
-            <p class="text-sm text-slate-500">
-              Búsqueda y gestión de pedidos rechazados
-            </p>
+            <h1 class="text-2xl font-bold text-slate-800 mb-1">Panel de Pedidos</h1>
+            <p class="text-sm text-slate-500">Búsqueda y gestión de pedidos rechazados</p>
           </div>
-          <div class="flex items-center gap-3">
-            <span class="user-badge">
-              ${currentUser.nombre}
-            </span>
-            <button
-              onclick="logout()"
-              class="text-slate-500 hover:text-red-600 text-sm font-medium transition-smooth px-3 py-2 rounded-lg hover:bg-red-50"
-            >
-              Cerrar sesión
-            </button>
-          </div>
+          <!-- Botón de cierre de sesión eliminado (no hay login) -->
         </div>
 
         <!-- Search Bar -->
@@ -211,12 +152,8 @@ function HomePage() {
             ? `
               <div class="text-center py-16">
                 <div class="spinner mx-auto mb-4"></div>
-                <p class="text-sm text-slate-500 font-medium">
-                  Buscando pedidos...
-                </p>
-                <p class="text-xs text-slate-400 mt-1">
-                  Esto puede tomar unos segundos
-                </p>
+                <p class="text-sm text-slate-500 font-medium">Buscando pedidos...</p>
+                <p class="text-xs text-slate-400 mt-1">Esto puede tomar unos segundos</p>
               </div>
             `
             : `
@@ -240,12 +177,8 @@ function HomePage() {
                             <svg class="mx-auto w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <p class="font-medium text-slate-600 mb-1 mt-3">
-                              No se encontraron resultados
-                            </p>
-                            <p class="text-xs text-slate-400">
-                              Intenta con otro DNI o número de orden
-                            </p>
+                            <p class="font-medium text-slate-600 mb-1 mt-3">No se encontraron resultados</p>
+                            <p class="text-xs text-slate-400">Intenta con otro DNI o número de orden</p>
                           </div>
                         </td>
                       </tr>`
@@ -259,9 +192,7 @@ function HomePage() {
                   <span>
                     Mostrando <span class="font-semibold text-slate-700">${searchResults.length}</span> resultado${searchResults.length !== 1 ? 's' : ''}
                   </span>
-                  <span>
-                    Última búsqueda: ${new Date().toLocaleTimeString('es-ES')}
-                  </span>
+                  <span>Última búsqueda: ${new Date().toLocaleTimeString('es-ES')}</span>
                 </div>
               ` : ''}
             `
@@ -295,6 +226,8 @@ window.doSearch = async () => {
   render(HomePage());
 };
 
+/*
+// Función de logout comentada (no usada)
 window.logout = () => {
   if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
     currentUser = null;
@@ -302,52 +235,29 @@ window.logout = () => {
     render(LoginPage());
   }
 };
+*/
 
 /* =========================
-   INIT
+   INIT - ARRANQUE DIRECTO EN HOME
 ========================= */
 document.addEventListener('DOMContentLoaded', () => {
-  render(LoginPage());
+  // Renderizamos directamente la página de búsqueda
+  render(HomePage());
 
-  document.addEventListener('submit', async e => {
-    if (e.target.id === 'loginForm') {
-      e.preventDefault();
-
-      const submitBtn = e.target.querySelector('button[type="submit"]');
-      const originalText = submitBtn.innerHTML;
-      
-      submitBtn.innerHTML = '<div class="spinner mx-auto" style="width: 20px; height: 20px; border-width: 2px;"></div>';
-      submitBtn.disabled = true;
-
-      try {
-        const { usuario, contrasena } = e.target;
-        const user = await supabaseLogin(
-          usuario.value,
-          contrasena.value
-        );
-
-        if (user) {
-          currentUser = user;
-          resetState();
-          render(HomePage());
-        } else {
-          alert('❌ Credenciales incorrectas. Por favor, verifica tu usuario y contraseña.');
-          submitBtn.innerHTML = originalText;
-          submitBtn.disabled = false;
-        }
-      } catch (error) {
-        console.error('Error en login:', error);
-        alert('❌ Error al iniciar sesión. Intenta nuevamente.');
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-      }
-    }
-  });
-
-  // Enter key en search
+  // Evento de tecla Enter en el buscador
   document.addEventListener('keypress', e => {
     if (e.target.id === 'searchInput' && e.key === 'Enter') {
       window.doSearch();
     }
   });
+
+  /*
+  // Lógica de login comentada
+  document.addEventListener('submit', async e => {
+    if (e.target.id === 'loginForm') {
+      e.preventDefault();
+      // ... lógica de login ...
+    }
+  });
+  */
 });
