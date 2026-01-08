@@ -137,7 +137,7 @@ function HomePage() {
             </svg>
             <input
               id="searchInput"
-              placeholder="Ingresa DNI (sin puntos) o Nº de pedido"
+              placeholder="Ingresa DNI o Nº de pedido"
               class="w-full pl-10 p-3.5 border input-modern search-input rounded-xl text-sm"
             />
           </div>
