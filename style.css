@@ -1,506 +1,301 @@
+import { supabaseLogin, searchPedidos } from './supabaseClient.js';
+
 /* =========================
-   Base
+   ESTADO GLOBAL
 ========================= */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+let currentUser = { nombre: 'Visitante' };
+let searchResults = [];
+let isLoading = false;
+let lastQuery = '';
+
+/* =========================
+   HELPERS
+========================= */
+function resetState() {
+  searchResults = [];
+  isLoading = false;
+  lastQuery = '';
 }
 
-:root {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --text-primary: #1e293b;
-  --text-secondary: #475569;
-  --text-tertiary: #64748b;
-  --text-muted: #94a3b8;
-  --border-color: #e2e8f0;
-  --border-light: #f1f5f9;
-  --shadow-sm: rgba(0, 0, 0, 0.05);
-  --shadow-md: rgba(0, 0, 0, 0.08);
-  --shadow-lg: rgba(0, 0, 0, 0.1);
-  --input-bg: #ffffff;
-  --input-border: #e2e8f0;
-  --input-focus: #3b82f6;
-  --hover-bg: #f8fafc;
-  --glass-bg: rgba(255, 255, 255, 0.95);
-  --glass-border: rgba(255, 255, 255, 0.3);
+function render(html) {
+  document.getElementById('root').innerHTML = html;
 }
 
-[data-theme="dark"] {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-tertiary: #94a3b8;
-  --text-muted: #64748b;
-  --border-color: #334155;
-  --border-light: #1e293b;
-  --shadow-sm: rgba(0, 0, 0, 0.3);
-  --shadow-md: rgba(0, 0, 0, 0.4);
-  --shadow-lg: rgba(0, 0, 0, 0.5);
-  --input-bg: #1e293b;
-  --input-border: #334155;
-  --input-focus: #60a5fa;
-  --hover-bg: #1e293b;
-  --glass-bg: rgba(30, 41, 59, 0.95);
-  --glass-border: rgba(51, 65, 85, 0.3);
+function formatDate(date) {
+  return new Date(date).toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-size: 14px;
-  line-height: 1.5;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  transition: background-color 0.3s ease, color 0.3s ease;
+function maskName(name) {
+  if (!name) return '—';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase() + '•'.repeat(Math.max(0, parts[0].length - 1));
+  }
+  const firstName = parts[0];
+  const lastName = parts.slice(1).join(' ');
+  const maskedLastName = lastName.charAt(0).toUpperCase() + '•'.repeat(Math.max(0, lastName.length - 1));
+  return `${firstName} ${maskedLastName}`;
+}
+
+function maskPhone(phone) {
+  if (!phone && phone !== 0) return '—';
+  const cleaned = phone.toString().replace(/\D/g, '');
+  if (cleaned.length === 0) return '—';
+  if (cleaned.length <= 4) {
+    return '•'.repeat(cleaned.length);
+  }
+  const first = cleaned.substring(0, 3);
+  const last = cleaned.length >= 5 ? cleaned.slice(-2) : '';
+  const middleLength = cleaned.length - first.length - last.length;
+  const middle = '•'.repeat(Math.max(0, middleLength));
+  return first + middle + last;
 }
 
 /* =========================
-   Dark Mode Toggle
+   THEME FUNCTIONS
 ========================= */
-.theme-toggle {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
+window.toggleTheme = () => {
+  const html = document.documentElement;
+  const currentTheme = html.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+};
+
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme');
+  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
 }
 
-.theme-toggle-btn {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: 2px solid var(--border-color);
-  background: var(--bg-primary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px var(--shadow-md);
-  position: relative;
-  overflow: hidden;
-}
+function createThemeToggle() {
+  if (document.getElementById('theme-toggle')) return;
 
-.theme-toggle-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px var(--shadow-lg);
-}
+  const toggleHTML = `
+    <div id="theme-toggle" class="theme-toggle">
+      <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Cambiar tema">
+        <svg class="theme-icon sun sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="5" fill="currentColor"/>
+          <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m15.364-6.636l-4.243 4.243m-6 0L1.878 5.636m14.485 12.728l-4.243-4.243m-6 0l-4.243 4.243" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <svg class="theme-icon moon moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor"/>
+        </svg>
+      </button>
+    </div>
+  `;
 
-.theme-toggle-btn:active {
-  transform: scale(0.95);
-}
-
-.theme-icon {
-  width: 24px;
-  height: 24px;
-  transition: all 0.3s ease;
-  position: absolute;
-}
-
-.theme-icon.sun {
-  opacity: 1;
-  transform: rotate(0deg) scale(1);
-}
-
-.theme-icon.moon {
-  opacity: 0;
-  transform: rotate(180deg) scale(0);
-}
-
-[data-theme="dark"] .theme-icon.sun {
-  opacity: 0;
-  transform: rotate(-180deg) scale(0);
-}
-
-[data-theme="dark"] .theme-icon.moon {
-  opacity: 1;
-  transform: rotate(0deg) scale(1);
-}
-
-/* Ícono de sol */
-.sun-icon {
-  fill: #f59e0b;
-}
-
-/* Ícono de luna */
-.moon-icon {
-  fill: #60a5fa;
+  document.body.insertAdjacentHTML('afterbegin', toggleHTML);
 }
 
 /* =========================
-   Animaciones
+   HOME PAGE (estructura base)
 ========================= */
-@keyframes spin {
-  to { transform: rotate(360deg); }
+function HomePage() {
+  return `
+    <div class="w-full max-w-7xl mx-auto animate-fadeIn">
+      <div class="glass-effect card-shadow p-8 rounded-2xl">
+        <!-- Header -->
+        <div class="header-section flex justify-between items-center flex-wrap gap-4">
+          <div>
+            <h1 class="text-2xl font-bold mb-1" style="color: var(--text-primary)">Panel de Pedidos</h1>
+            <p class="text-sm" style="color: var(--text-muted)">Búsqueda y gestión de pedidos rechazados</p>
+          </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-container mt-6 flex gap-3 flex-wrap">
+          <div class="relative flex-1 min-w-[250px]">
+            <svg class="search-icon absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              id="searchInput"
+              placeholder="Ingresa DNI (sin puntos) o Nº de pedido"
+              class="w-full pl-10 p-3.5 border input-modern search-input rounded-xl text-sm"
+            />
+          </div>
+          <button
+            onclick="doSearch()"
+            class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3.5 rounded-xl font-semibold text-sm btn-primary whitespace-nowrap"
+          >
+            🔍 Buscar
+          </button>
+        </div>
+
+        <!-- Resultados (dinámico) -->
+        <div id="resultsContainer">
+          ${ResultsSection()}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
-@keyframes fadeIn {
-  from {
+/* =========================
+   SECCIÓN DE RESULTADOS (con transición suave)
+========================= */
+function ResultsSection() {
+  if (isLoading) {
+    return `
+      <div class="text-center py-16 fade-in">
+        <div class="spinner mx-auto mb-4"></div>
+        <p class="text-sm font-medium" style="color: var(--text-muted)">Buscando pedidos...</p>
+        <p class="text-xs mt-1" style="color: var(--text-muted); opacity: 0.7">Esto puede tomar unos segundos</p>
+      </div>
+    `;
+  }
+
+  const rows = searchResults.map((r, idx) => `
+    <tr style="animation-delay: ${idx * 0.05}s">
+      <td class="px-4 py-3.5">
+        <div class="flex items-center gap-2">
+          <span class="badge badge-info">#${r.order_id}</span>
+        </div>
+      </td>
+      <td class="px-4 py-3.5">
+        <div class="font-medium" style="color: var(--text-secondary)">${maskName(r.nombrecliente)}</div>
+      </td>
+      <td class="px-4 py-3.5 text-sm" style="color: var(--text-secondary)">${maskPhone(r.numerotelefonico)}</td>
+      <td class="px-4 py-3.5">
+        <div class="badge badge-danger mb-1">${r.motivorechazo}</div>
+        ${r.submotivorechazo ? `<div class="text-xs mt-1" style="color: var(--text-muted)">${r.submotivorechazo}</div>` : ''}
+      </td>
+      <td class="px-4 py-3.5 text-xs" style="color: var(--text-secondary)">${formatDate(r.fechatomapedido)}</td>
+    </tr>
+  `).join('');
+
+  return `
+    <div class="overflow-x-auto rounded-xl mt-6 fade-in" style="border: 1px solid var(--border-color)">
+      <table class="table-modern w-full">
+        <thead>
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style="color: var(--text-secondary)">Nº Pedido</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style="color: var(--text-secondary)">Cliente</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style="color: var(--text-secondary)">Teléfono</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style="color: var(--text-secondary)">Motivo de Rechazo</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style="color: var(--text-secondary)">Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${
+            rows || 
+            `<tr>
+              <td colspan="5">
+                <div class="empty-state py-12 text-center fade-in">
+                  <svg class="mx-auto w-10 h-10" style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p class="font-medium mb-1 mt-3" style="color: var(--text-secondary)">No se encontraron resultados</p>
+                  <p class="text-xs" style="color: var(--text-muted)">Intenta con otro DNI o número de pedido</p>
+                </div>
+              </td>
+            </tr>`
+          }
+        </tbody>
+      </table>
+    </div>
+    ${searchResults.length > 0 ? `
+      <div class="mt-4 flex items-center justify-between text-xs px-2 fade-in" style="color: var(--text-muted)">
+        <span>
+          Mostrando <span class="font-semibold" style="color: var(--text-secondary)">${searchResults.length}</span> resultado${searchResults.length !== 1 ? 's' : ''}
+        </span>
+        <span>Última búsqueda: ${new Date().toLocaleTimeString('es-ES')}</span>
+      </div>
+    ` : ''}
+  `;
+}
+
+/* =========================
+   EVENTOS
+========================= */
+window.doSearch = async () => {
+  const input = document.getElementById('searchInput');
+  const q = input.value.trim();
+
+  // Validación
+  if (!q) {
+    alert('🔍 Por favor ingresa un DNI o número de pedido');
+    input.focus();
+    return;
+  }
+
+  if (!/^\d+$/.test(q)) {
+    alert('🔍 Usa solo números: DNI (sin puntos) o número de pedido');
+    input.select();
+    return;
+  }
+
+  if (q.length < 3 || q.length > 12) {
+    alert('🔍 El DNI o número de pedido debe tener entre 3 y 12 dígitos');
+    input.select();
+    return;
+  }
+
+  if (q === lastQuery) return;
+  lastQuery = q;
+
+  // Actualizar solo resultados
+  isLoading = true;
+  document.getElementById('resultsContainer').innerHTML = ResultsSection();
+
+  try {
+    searchResults = await searchPedidos(q);
+  } catch (error) {
+    console.error('Error en búsqueda:', error);
+    searchResults = [];
+    alert('⚠️ No se pudieron cargar los pedidos. Verifica tu conexión e inténtalo nuevamente.');
+  }
+
+  isLoading = false;
+  document.getElementById('resultsContainer').innerHTML = ResultsSection();
+};
+
+/* =========================
+   TRANSICIÓN SUAVE
+========================= */
+const style = document.createElement('style');
+style.textContent = `
+  .fade-in {
     opacity: 0;
-    transform: translateY(10px);
+    animation: fadeInSmooth 0.3s ease forwards;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  @keyframes fadeInSmooth {
+    to { opacity: 1; }
   }
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
+`;
+document.head.appendChild(style);
 
 /* =========================
-   Componentes Personalizados
+   INIT
 ========================= */
-.glass-effect {
-  background: var(--glass-bg);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--glass-border);
-}
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  createThemeToggle();
+  render(HomePage());
 
-.card-shadow {
-  box-shadow: 
-    0 1px 3px var(--shadow-sm),
-    0 10px 40px -10px var(--shadow-md);
-}
+  // Auto-focus
+  setTimeout(() => {
+    const input = document.getElementById('searchInput');
+    if (input) input.focus();
+  }, 100);
 
-.input-modern {
-  transition: all 0.2s ease;
-  border: 1.5px solid var(--input-border);
-  background: var(--input-bg);
-  color: var(--text-primary);
-}
+  document.addEventListener('keypress', e => {
+    if (e.target.id === 'searchInput' && e.key === 'Enter') {
+      window.doSearch();
+    }
+  });
 
-.input-modern:focus {
-  outline: none;
-  border-color: var(--input-focus);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-[data-theme="dark"] .input-modern:focus {
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
-}
-
-.input-modern::placeholder {
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
-.btn-primary {
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.btn-primary:active {
-  transform: translateY(0);
-}
-
-.btn-primary::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  transform: translate(-50%, -50%);
-  transition: width 0.5s, height 0.5s;
-}
-
-.btn-primary:active::before {
-  width: 300px;
-  height: 300px;
-}
-
-/* =========================
-   Spinner
-========================= */
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(59, 130, 246, 0.15);
-  border-top-color: #3b82f6;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-[data-theme="dark"] .spinner {
-  border: 3px solid rgba(96, 165, 250, 0.2);
-  border-top-color: #60a5fa;
-}
-
-/* =========================
-   Tabla Moderna
-========================= */
-.table-modern {
-  border-collapse: separate;
-  border-spacing: 0;
-  width: 100%;
-  font-size: 13px;
-}
-
-.table-modern thead th {
-  background: linear-gradient(to bottom, var(--bg-secondary), var(--bg-tertiary));
-  font-weight: 600;
-  color: var(--text-secondary);
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  padding: 12px 16px;
-  text-align: left;
-  border-bottom: 2px solid var(--border-color);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.table-modern tbody tr {
-  transition: all 0.2s ease;
-  animation: slideIn 0.3s ease;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.table-modern tbody tr:hover {
-  background: var(--hover-bg);
-  transform: scale(1.005);
-  box-shadow: 0 2px 8px var(--shadow-sm);
-}
-
-.table-modern tbody td {
-  padding: 14px 16px;
-  color: var(--text-secondary);
-}
-
-/* =========================
-   Badges
-========================= */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.badge-danger {
-  background: #fee2e2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
-}
-
-[data-theme="dark"] .badge-danger {
-  background: rgba(220, 38, 38, 0.2);
-  color: #fca5a5;
-  border: 1px solid rgba(220, 38, 38, 0.3);
-}
-
-.badge-info {
-  background: #dbeafe;
-  color: #2563eb;
-  border: 1px solid #bfdbfe;
-}
-
-[data-theme="dark"] .badge-info {
-  background: rgba(37, 99, 235, 0.2);
-  color: #93c5fd;
-  border: 1px solid rgba(37, 99, 235, 0.3);
-}
-
-/* =========================
-   Estados
-========================= */
-.empty-state {
-  padding: 60px 20px;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 13px;
-  animation: fadeIn 0.4s ease;
-}
-
-.empty-state svg {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 16px;
-  opacity: 0.3;
-}
-
-/* =========================
-   Header
-========================= */
-.header-section {
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 20px;
-  margin-bottom: 24px;
-}
-
-.user-badge {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.user-badge::before {
-  content: '👤';
-  font-size: 14px;
-}
-
-/* =========================
-   Search Bar
-========================= */
-.search-container {
-  position: relative;
-  display: flex;
-  gap: 10px;
-  margin-bottom: 24px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  pointer-events: none;
-}
-
-.search-input {
-  padding-left: 44px !important;
-}
-
-/* =========================
-   Scrollbar
-========================= */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--text-muted);
-  opacity: 0.3;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  opacity: 0.5;
-}
-
-/* =========================
-   Responsive
-========================= */
-@media (max-width: 768px) {
-  .theme-toggle {
-    top: 16px;
-    right: 16px;
-  }
-  
-  .theme-toggle-btn {
-    width: 48px;
-    height: 48px;
-  }
-  
-  .theme-icon {
-    width: 20px;
-    height: 20px;
-  }
-  
-  .table-modern {
-    font-size: 12px;
-  }
-  
-  .table-modern thead th,
-  .table-modern tbody td {
-    padding: 10px 12px;
-  }
-  
-  .user-badge {
-    font-size: 11px;
-    padding: 5px 12px;
-  }
-}
-
-/* =========================
-   Login Form
-========================= */
-.login-container {
-  animation: fadeIn 0.5s ease;
-}
-
-.login-header {
-  text-align: center;
-  margin-bottom: 28px;
-}
-
-.login-icon {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 16px;
-  color: white;
-  font-size: 24px;
-}
-
-.login-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 6px;
-}
-
-.login-subtitle {
-  font-size: 13px;
-  color: var(--text-tertiary);
-}
-
-/* =========================
-   Utilidades
-========================= */
-.animate-fadeIn {
-  animation: fadeIn 0.5s ease;
-}
-
-.transition-smooth {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!localStorage.getItem('theme')) {
+      document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+    }
+  });
+});
