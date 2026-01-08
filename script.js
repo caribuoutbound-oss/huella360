@@ -152,12 +152,33 @@ function HomePage() {
 
       @keyframes iconPulse {
         0%, 100% {
-          transform: scale(1);
+          transform: scale(1) rotate(0deg);
           filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.6));
         }
         50% {
-          transform: scale(1.1);
+          transform: scale(1.1) rotate(5deg);
           filter: drop-shadow(0 0 8px rgba(147, 51, 234, 0.8));
+        }
+      }
+
+      @keyframes iconSpin {
+        from {
+          transform: rotate(0deg) scale(1);
+        }
+        to {
+          transform: rotate(360deg) scale(1);
+        }
+      }
+
+      @keyframes gradientFlow {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
         }
       }
 
@@ -176,35 +197,47 @@ function HomePage() {
         border-radius: 10px;
         border: 2px solid rgba(59, 130, 246, 0.8);
         background: linear-gradient(
-          135deg,
-          rgba(59, 130, 246, 0.1) 0%,
-          rgba(147, 51, 234, 0.1) 100%
+          90deg,
+          #3b82f6 0%,
+          #9333ea 25%,
+          #3b82f6 50%,
+          #60a5fa 75%,
+          #3b82f6 100%
         );
-        backdrop-filter: blur(10px);
-        animation: neonGlow 2s ease-in-out infinite, textShine 2s ease-in-out infinite;
+        background-size: 300% 300%;
+        animation: 
+          gradientFlow 8s ease-in-out infinite,
+          neonGlow 2.5s ease-in-out infinite,
+          textShine 2.5s ease-in-out infinite;
         font-size: 13px;
         font-weight: 600;
         line-height: 1.5;
-        color: #60a5fa;
-        text-shadow: 0 0 8px rgba(96, 165, 250, 0.8);
+        color: #ffffff;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
         overflow: hidden;
         position: relative;
       }
 
+      /* Brillo interno adicional */
       .neon-alert::before {
         content: '';
         position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         background: linear-gradient(
-          45deg,
-          transparent 30%,
-          rgba(255, 255, 255, 0.1) 50%,
-          transparent 70%
+          135deg,
+          rgba(255, 255, 255, 0.1) 0%,
+          transparent 50%
         );
         animation: shimmer 3s linear infinite;
+        z-index: 1;
+      }
+
+      .neon-alert > * {
+        position: relative;
+        z-index: 2;
       }
 
       @keyframes shimmer {
@@ -220,8 +253,10 @@ function HomePage() {
         width: 20px;
         height: 20px;
         flex-shrink: 0;
-        animation: iconPulse 2s ease-in-out infinite;
-        stroke: currentColor;
+        animation: 
+          iconSpin 12s linear infinite,
+          iconPulse 2.5s ease-in-out infinite;
+        stroke: white;
         stroke-width: 2.5;
         fill: none;
       }
@@ -230,6 +265,8 @@ function HomePage() {
         flex: 1;
         word-break: break-word;
         min-width: 0;
+        color: #ffffff;
+        text-shadow: 0 0 6px rgba(255, 255, 255, 0.85);
       }
 
       @media (max-width: 640px) {
@@ -252,7 +289,7 @@ function HomePage() {
             <h1 class="text-2xl font-bold mb-1" style="color: var(--text-primary)">Panel de Pedidos</h1>
             <p class="text-sm mb-3" style="color: var(--text-muted)">Búsqueda y gestión de pedidos rechazados</p>
             
-            <!-- Alerta Neon Mejorada (con ícono alineado) -->
+            <!-- Alerta Neon con ícono giratorio y gradiente animado -->
             <div class="neon-alert-container">
               <div class="neon-alert">
                 <svg class="neon-alert-icon" viewBox="0 0 24 24">
@@ -408,5 +445,5 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!localStorage.getItem('theme')) {
       document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
     }
-  }); 
+  });
 });
