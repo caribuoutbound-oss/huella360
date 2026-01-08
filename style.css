@@ -167,6 +167,19 @@ body {
 }
 
 /* =========================
+   Fade-in suave (para resultados dinámicos)
+========================= */
+@keyframes fadeInSmooth {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fadeInSmooth 0.3s ease forwards;
+}
+
+/* =========================
    Componentes Personalizados
 ========================= */
 .glass-effect {
