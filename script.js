@@ -125,7 +125,17 @@ function HomePage() {
         <div class="header-section flex justify-between items-center flex-wrap gap-4">
           <div>
             <h1 class="text-2xl font-bold mb-1" style="color: var(--text-primary)">Panel de Pedidos</h1>
-            <p class="text-sm" style="color: var(--text-muted)">Búsqueda y gestión de pedidos rechazados (Los documentos que comienzan con 0 deben ingresarse sin los ceros iniciales.)</p>
+            <p class="text-sm font-medium"
+   style="
+     background-color: #FFF9E6;
+     color: #8A6D3B;
+     padding: 6px 10px;
+     border-radius: 4px;
+     border-left: 4px solid #F0AD4E;
+   ">
+  Los documentos que comienzan con 0 deben ingresarse sin los ceros iniciales.
+</p>
+
           </div>
         </div>
 
