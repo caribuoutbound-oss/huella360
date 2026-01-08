@@ -169,8 +169,10 @@ function HomePage() {
       }
 
       .neon-alert {
-        position: relative;
-        padding: 12px 16px 12px 44px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
         border-radius: 10px;
         border: 2px solid rgba(59, 130, 246, 0.8);
         background: linear-gradient(
@@ -179,14 +181,14 @@ function HomePage() {
           rgba(147, 51, 234, 0.1) 100%
         );
         backdrop-filter: blur(10px);
-        animation: neonGlow 2s ease-in-out infinite;
+        animation: neonGlow 2s ease-in-out infinite, textShine 2s ease-in-out infinite;
         font-size: 13px;
         font-weight: 600;
         line-height: 1.5;
         color: #60a5fa;
         text-shadow: 0 0 8px rgba(96, 165, 250, 0.8);
-        animation: neonGlow 2s ease-in-out infinite, textShine 2s ease-in-out infinite;
         overflow: hidden;
+        position: relative;
       }
 
       .neon-alert::before {
@@ -215,29 +217,29 @@ function HomePage() {
       }
 
       .neon-alert-icon {
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
         width: 20px;
         height: 20px;
+        flex-shrink: 0;
         animation: iconPulse 2s ease-in-out infinite;
+        stroke: currentColor;
+        stroke-width: 2.5;
+        fill: none;
       }
 
       .neon-alert-text {
-        position: relative;
-        z-index: 1;
+        flex: 1;
+        word-break: break-word;
+        min-width: 0;
       }
 
       @media (max-width: 640px) {
         .neon-alert {
           font-size: 12px;
-          padding: 10px 14px 10px 40px;
+          padding: 10px 14px;
         }
         .neon-alert-icon {
           width: 18px;
           height: 18px;
-          left: 12px;
         }
       }
     </style>
@@ -250,11 +252,11 @@ function HomePage() {
             <h1 class="text-2xl font-bold mb-1" style="color: var(--text-primary)">Panel de Pedidos</h1>
             <p class="text-sm mb-3" style="color: var(--text-muted)">Búsqueda y gestión de pedidos rechazados</p>
             
-            <!-- Alerta Neon Mejorada -->
+            <!-- Alerta Neon Mejorada (con ícono alineado) -->
             <div class="neon-alert-container">
               <div class="neon-alert">
-                <svg class="neon-alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                <svg class="neon-alert-icon" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 <div class="neon-alert-text">
                   Los documentos que comienzan con 0 deben ingresarse sin los ceros iniciales.
@@ -406,5 +408,5 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!localStorage.getItem('theme')) {
       document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
     }
-  });
+  }); 
 });
