@@ -127,19 +127,64 @@ function HomePage() {
             <h1 class="text-2xl font-bold mb-1" style="color: var(--text-primary)">Panel de Pedidos</h1>
             <p class="text-sm mb-3" style="color: var(--text-muted)">Búsqueda y gestión de pedidos rechazados</p>
             
-            <!-- Alerta mejorada -->
-            <div class="alert-note" style="
+            <!-- Alerta Neon Parpadeante -->
+            <div class="alert-neon" style="
               font-size: 11px;
-              background-color: var(--bg-muted, #FFF9E6);
-              color: var(--text-warning, #8A6D3B);
               padding: 6px 10px;
               border-radius: 4px;
-              border-left: 4px solid var(--border-warning, #F0AD4E);
+              border-left: 4px solid #ff00ff;
               display: inline-block;
               margin-top: 4px;
+              animation: neonPulse 3s infinite alternate ease-in-out;
+              background: rgba(255, 255, 255, 0.1);
+              box-shadow: 0 0 8px rgba(255, 0, 255, 0.5);
+              color: #fff;
+              font-weight: bold;
+              text-shadow: 0 0 4px #ff00ff;
             ">
               Los documentos que comienzan con 0 deben ingresarse sin los ceros iniciales.
             </div>
+
+            <!-- Animación CSS en línea -->
+            <style>
+              @keyframes neonPulse {
+                0% {
+                  background-color: rgba(0, 255, 255, 0.2);
+                  border-left-color: #00ffff;
+                  box-shadow: 0 0 8px #00ffff;
+                  color: #00ffff;
+                  text-shadow: 0 0 4px #00ffff;
+                }
+                25% {
+                  background-color: rgba(255, 0, 255, 0.2);
+                  border-left-color: #ff00ff;
+                  box-shadow: 0 0 8px #ff00ff;
+                  color: #ff00ff;
+                  text-shadow: 0 0 4px #ff00ff;
+                }
+                50% {
+                  background-color: rgba(0, 255, 0, 0.2);
+                  border-left-color: #00ff00;
+                  box-shadow: 0 0 8px #00ff00;
+                  color: #00ff00;
+                  text-shadow: 0 0 4px #00ff00;
+                }
+                75% {
+                  background-color: rgba(255, 255, 0, 0.2);
+                  border-left-color: #ffff00;
+                  box-shadow: 0 0 8px #ffff00;
+                  color: #ffff00;
+                  text-shadow: 0 0 4px #ffff00;
+                }
+                100% {
+                  background-color: rgba(255, 165, 0, 0.2);
+                  border-left-color: #ffa500;
+                  box-shadow: 0 0 8px #ffa500;
+                  color: #ffa500;
+                  text-shadow: 0 0 4px #ffa500;
+                }
+              }
+            </style>
           </div>
         </div>
 
