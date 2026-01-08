@@ -6,7 +6,7 @@ import { supabaseLogin, searchPedidos } from './supabaseClient.js';
 let currentUser = { nombre: 'Visitante' };
 let searchResults = [];
 let isLoading = false;
-let lastQuery = ''; // Para evitar búsquedas repetidas
+let lastQuery = '';
 
 /* =========================
    HELPERS
@@ -119,6 +119,129 @@ function HomePage() {
   `).join('');
 
   return `
+    <style>
+      @keyframes neonGlow {
+        0%, 100% {
+          box-shadow: 
+            0 0 5px rgba(59, 130, 246, 0.5),
+            0 0 10px rgba(59, 130, 246, 0.4),
+            0 0 20px rgba(59, 130, 246, 0.3),
+            inset 0 0 10px rgba(59, 130, 246, 0.2);
+          border-color: rgba(59, 130, 246, 0.8);
+        }
+        50% {
+          box-shadow: 
+            0 0 10px rgba(147, 51, 234, 0.6),
+            0 0 20px rgba(147, 51, 234, 0.5),
+            0 0 30px rgba(147, 51, 234, 0.4),
+            inset 0 0 15px rgba(147, 51, 234, 0.3);
+          border-color: rgba(147, 51, 234, 0.9);
+        }
+      }
+
+      @keyframes textShine {
+        0%, 100% {
+          color: #60a5fa;
+          text-shadow: 0 0 8px rgba(96, 165, 250, 0.8);
+        }
+        50% {
+          color: #a78bfa;
+          text-shadow: 0 0 12px rgba(167, 139, 250, 0.9);
+        }
+      }
+
+      @keyframes iconPulse {
+        0%, 100% {
+          transform: scale(1);
+          filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.6));
+        }
+        50% {
+          transform: scale(1.1);
+          filter: drop-shadow(0 0 8px rgba(147, 51, 234, 0.8));
+        }
+      }
+
+      .neon-alert-container {
+        position: relative;
+        display: inline-block;
+        margin-top: 12px;
+        max-width: 100%;
+      }
+
+      .neon-alert {
+        position: relative;
+        padding: 12px 16px 12px 44px;
+        border-radius: 10px;
+        border: 2px solid rgba(59, 130, 246, 0.8);
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.1) 0%,
+          rgba(147, 51, 234, 0.1) 100%
+        );
+        backdrop-filter: blur(10px);
+        animation: neonGlow 2s ease-in-out infinite;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.5;
+        color: #60a5fa;
+        text-shadow: 0 0 8px rgba(96, 165, 250, 0.8);
+        animation: neonGlow 2s ease-in-out infinite, textShine 2s ease-in-out infinite;
+        overflow: hidden;
+      }
+
+      .neon-alert::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+          45deg,
+          transparent 30%,
+          rgba(255, 255, 255, 0.1) 50%,
+          transparent 70%
+        );
+        animation: shimmer 3s linear infinite;
+      }
+
+      @keyframes shimmer {
+        0% {
+          transform: translateX(-100%) translateY(-100%) rotate(45deg);
+        }
+        100% {
+          transform: translateX(100%) translateY(100%) rotate(45deg);
+        }
+      }
+
+      .neon-alert-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        animation: iconPulse 2s ease-in-out infinite;
+      }
+
+      .neon-alert-text {
+        position: relative;
+        z-index: 1;
+      }
+
+      @media (max-width: 640px) {
+        .neon-alert {
+          font-size: 12px;
+          padding: 10px 14px 10px 40px;
+        }
+        .neon-alert-icon {
+          width: 18px;
+          height: 18px;
+          left: 12px;
+        }
+      }
+    </style>
+
     <div class="w-full max-w-7xl mx-auto animate-fadeIn">
       <div class="glass-effect card-shadow p-8 rounded-2xl">
         <!-- Header -->
@@ -127,64 +250,17 @@ function HomePage() {
             <h1 class="text-2xl font-bold mb-1" style="color: var(--text-primary)">Panel de Pedidos</h1>
             <p class="text-sm mb-3" style="color: var(--text-muted)">Búsqueda y gestión de pedidos rechazados</p>
             
-            <!-- Alerta Neon Parpadeante -->
-            <div class="alert-neon" style="
-              font-size: 11px;
-              padding: 6px 10px;
-              border-radius: 4px;
-              border-left: 4px solid #ff00ff;
-              display: inline-block;
-              margin-top: 4px;
-              animation: neonPulse 3s infinite alternate ease-in-out;
-              background: rgba(255, 255, 255, 0.1);
-              box-shadow: 0 0 8px rgba(255, 0, 255, 0.5);
-              color: #fff;
-              font-weight: bold;
-              text-shadow: 0 0 4px #ff00ff;
-            ">
-              Los documentos que comienzan con 0 deben ingresarse sin los ceros iniciales.
+            <!-- Alerta Neon Mejorada -->
+            <div class="neon-alert-container">
+              <div class="neon-alert">
+                <svg class="neon-alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div class="neon-alert-text">
+                  Los documentos que comienzan con 0 deben ingresarse sin los ceros iniciales.
+                </div>
+              </div>
             </div>
-
-            <!-- Animación CSS en línea -->
-            <style>
-              @keyframes neonPulse {
-                0% {
-                  background-color: rgba(0, 255, 255, 0.2);
-                  border-left-color: #00ffff;
-                  box-shadow: 0 0 8px #00ffff;
-                  color: #00ffff;
-                  text-shadow: 0 0 4px #00ffff;
-                }
-                25% {
-                  background-color: rgba(255, 0, 255, 0.2);
-                  border-left-color: #ff00ff;
-                  box-shadow: 0 0 8px #ff00ff;
-                  color: #ff00ff;
-                  text-shadow: 0 0 4px #ff00ff;
-                }
-                50% {
-                  background-color: rgba(0, 255, 0, 0.2);
-                  border-left-color: #00ff00;
-                  box-shadow: 0 0 8px #00ff00;
-                  color: #00ff00;
-                  text-shadow: 0 0 4px #00ff00;
-                }
-                75% {
-                  background-color: rgba(255, 255, 0, 0.2);
-                  border-left-color: #ffff00;
-                  box-shadow: 0 0 8px #ffff00;
-                  color: #ffff00;
-                  text-shadow: 0 0 4px #ffff00;
-                }
-                100% {
-                  background-color: rgba(255, 165, 0, 0.2);
-                  border-left-color: #ffa500;
-                  box-shadow: 0 0 8px #ffa500;
-                  color: #ffa500;
-                  text-shadow: 0 0 4px #ffa500;
-                }
-              }
-            </style>
           </div>
         </div>
 
@@ -271,7 +347,6 @@ window.doSearch = async () => {
   const input = document.getElementById('searchInput');
   const q = input.value.trim();
 
-  // 🔒 Validación de entrada
   if (!q) {
     alert('🔍 Por favor ingresa un DNI o número de pedido');
     input.focus();
@@ -280,7 +355,7 @@ window.doSearch = async () => {
 
   if (!/^\d+$/.test(q)) {
     alert('🔍 Usa solo números: DNI (sin puntos) o número de pedido');
-    input.select(); // Selecciona el texto incorrecto para facilitar corrección
+    input.select();
     return;
   }
 
@@ -290,7 +365,6 @@ window.doSearch = async () => {
     return;
   }
 
-  // Evitar búsqueda repetida
   if (q === lastQuery) return;
 
   lastQuery = q;
@@ -302,7 +376,6 @@ window.doSearch = async () => {
   } catch (error) {
     console.error('Error en búsqueda:', error);
     searchResults = [];
-    // 🎯 Mensaje de error amigable
     alert('⚠️ No se pudieron cargar los pedidos. Verifica tu conexión e inténtalo nuevamente.');
   }
 
@@ -318,7 +391,6 @@ document.addEventListener('DOMContentLoaded', () => {
   createThemeToggle();
   render(HomePage());
 
-  // 🔍 Auto-focus en el campo de búsqueda
   setTimeout(() => {
     const input = document.getElementById('searchInput');
     if (input) input.focus();
