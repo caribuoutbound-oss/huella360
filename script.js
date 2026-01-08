@@ -1,8 +1,8 @@
 import { supabaseLogin, searchPedidos } from './supabaseClient.js';
 
-<!-- =========================
+/* =========================
    ESTADO GLOBAL
-========================= -->
+========================= */
 let currentUser = { nombre: 'Visitante' };
 let searchResults = [];
 let isLoading = false;
@@ -121,18 +121,25 @@ function HomePage() {
   return `
     <div class="w-full max-w-7xl mx-auto animate-fadeIn">
       <div class="glass-effect card-shadow p-8 rounded-2xl">
-        <!-- Header Section -->
-        <div class="header-section flex justify-between items-start flex-wrap gap-4">
-          <div class="header-content">
+        <!-- Header -->
+        <div class="header-section flex justify-between items-center flex-wrap gap-4">
+          <div>
             <h1 class="text-2xl font-bold mb-1" style="color: var(--text-primary)">Panel de Pedidos</h1>
-            <p class="text-sm mb-3" style="color: var(--text-muted)">Búsqueda y gestión de pedidos rechazados</p>
+            <p class="text-sm" style="color: var(--text-muted)">Búsqueda y gestión de pedidos rechazados</p>
+            
+<p class="font-medium"
+   style="
+     font-size: 11px;
+     background-color: #FFF9E6;
+     color: #8A6D3B;
+     padding: 6px 10px;
+     border-radius: 4px;
+     border-left: 4px solid #F0AD4E;
+   ">
+  Los documentos que comienzan con 0 deben ingresarse sin los ceros iniciales.
+</p>
 
-            <!-- Alert Box -->
-            <div class="alert-box mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg shadow-sm">
-              <p class="text-xs font-medium text-yellow-800">
-                Los documentos que comienzan con 0 deben ingresarse sin los ceros iniciales.
-              </p>
-            </div>
+
           </div>
         </div>
 
